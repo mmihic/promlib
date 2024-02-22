@@ -15,6 +15,11 @@ type Result struct {
 	Warnings []string
 }
 
+// ValueIter returns an iterator over the values.
+func (r *Result) ValueIter() ValueIter {
+	return NewValueIter(r.Data)
+}
+
 // ParseResult parses a Result.
 func ParseResult(r io.Reader) (*Result, error) {
 	var result Result
