@@ -8,8 +8,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jonboulle/clockwork"
 	"github.com/mmihic/golib/src/pkg/httpclient"
 	"github.com/prometheus/common/model"
+	"go.uber.org/atomic"
+	"go.uber.org/zap"
 )
 
 const (
@@ -59,6 +62,20 @@ func WithHTTPOptions(opt ...httpclient.CallOption) ClientOpt {
 	}
 }
 
+// WithQueryLog sets a Logger for queries and query timers issued by the client.
+func WithQueryLog(log *zap.Logger) ClientOpt {
+	return func(c *client) {
+		c.queryLog = log
+	}
+}
+
+// WithClock sets the clock used by the client.
+func WithClock(clock clockwork.Clock) ClientOpt {
+	return func(c *client) {
+		c.clock = clock
+	}
+}
+
 // NewClient creates a new Prometheus client against a base URL and a set
 // of client options.
 func NewClient(baseURL string, opts ...ClientOpt) (Client, error) {
@@ -77,12 +94,23 @@ func NewClient(baseURL string, opts ...ClientOpt) (Client, error) {
 		c.http = httpc
 	}
 	c.callOpts = nil
+
+	if c.queryLog == nil {
+		c.queryLog = zap.NewNop()
+	}
+	if c.clock == nil {
+		c.clock = clockwork.NewRealClock()
+	}
+
 	return c, nil
 }
 
 type client struct {
 	http     httpclient.Client
 	callOpts []httpclient.CallOption
+	queryLog *zap.Logger
+	queryID  atomic.Uint64
+	clock    clockwork.Clock
 }
 
 func (c *client) InstantQuery(q string) InstantQuery {
@@ -104,19 +132,36 @@ func (q instantQuery) Time(t time.Time) InstantQuery {
 }
 
 func (q instantQuery) Do(ctx context.Context) (*Result, error) {
+	qid := q.c.queryID.Add(1)
+	startTime := q.c.clock.Now()
+
 	p := url.Values{}
 	p.Add("query", q.q)
 	if !q.t.IsZero() {
 		p.Add("time", strconv.FormatInt(q.t.UTC().Unix(), 10))
 	}
 
+	q.c.queryLog.Info("instant-query",
+		zap.String("query", q.q),
+		zap.Uint64("id", qid),
+		zap.Time("time", q.t))
+
 	var r Result
 	if err := q.c.http.Post(ctx, pathInstantQuery, FormURLEncoded(p), httpclient.JSON(&r)); err != nil {
+		q.c.queryLog.Error("instant-query",
+			zap.Uint64("id", qid),
+			zap.Error(err))
 		if httperr, ok := httpclient.UnwrapError(err); ok {
 			return nil, NewError(httperr.StatusCode, httperr.Body.String())
 		}
 		return nil, err
 	}
+
+	endTime := q.c.clock.Now()
+	q.c.queryLog.Info("instant-query",
+		zap.Uint64("id", qid),
+		zap.Strings("warnings", r.Warnings),
+		zap.Duration("elapsed", endTime.Sub(startTime)))
 
 	return &r, nil
 }
@@ -152,6 +197,9 @@ func (q rangeQuery) Step(step model.Duration) RangeQuery {
 }
 
 func (q rangeQuery) Do(ctx context.Context) (*Result, error) {
+	qid := q.c.queryID.Add(1)
+	startTime := q.c.clock.Now()
+
 	if q.start.IsZero() {
 		return nil, fmt.Errorf("'start' must be set for range queries")
 	}
@@ -166,14 +214,31 @@ func (q rangeQuery) Do(ctx context.Context) (*Result, error) {
 	p.Add("end", strconv.FormatInt(q.end.Unix(), 10))
 	p.Add("step", q.step.String())
 
+	q.c.queryLog.Info("range-query",
+		zap.String("query", q.q),
+		zap.Uint64("id", qid),
+		zap.Time("start", q.start),
+		zap.Time("end", q.end),
+		zap.Duration("step", time.Duration(q.step)))
+
 	var r Result
 	if err := q.c.http.Post(ctx, pathRangeQuery, FormURLEncoded(p), httpclient.JSON(&r)); err != nil {
+		q.c.queryLog.Error("range-query",
+			zap.Uint64("id", qid),
+			zap.Error(err))
+
 		if httperr, ok := httpclient.UnwrapError(err); ok {
 			return nil, NewError(httperr.StatusCode, httperr.Body.String())
 		}
 
 		return nil, err
 	}
+
+	endTime := q.c.clock.Now()
+	q.c.queryLog.Info("range-query",
+		zap.Uint64("id", qid),
+		zap.Strings("warnings", r.Warnings),
+		zap.Duration("elapsed", endTime.Sub(startTime)))
 
 	return &r, nil
 }

@@ -4,9 +4,11 @@ go 1.20
 
 require (
 	github.com/alecthomas/kong v0.8.1
+	github.com/jonboulle/clockwork v0.4.0
 	github.com/mmihic/golib v0.1.8
 	github.com/prometheus/common v0.46.0
 	github.com/stretchr/testify v1.8.1
+	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.26.0
 )
 

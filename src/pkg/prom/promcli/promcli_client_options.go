@@ -4,7 +4,10 @@ package promcli
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+
+	"go.uber.org/zap"
 
 	"promlib/src/pkg/prom"
 )
@@ -13,6 +16,7 @@ import (
 type ClientOptions struct {
 	APITokenFile string `help:"file containing the API token"`
 	ServerURL    string `name:"server-url" short:"s" required:"" help:"Prometheus server URL"`
+	LogQueries   bool   `help:"set to log queries"`
 }
 
 // PromClient returns a prom PromClient.
@@ -36,6 +40,17 @@ func (opts *ClientOptions) PromClient(_ context.Context) (prom.Client, error) {
 		return nil, errors.New("neither --api-token-file nor PROM_API_TOKEN env var are set")
 	}
 
-	return prom.NewClient(opts.ServerURL,
-		prom.WithHTTPOptions(prom.WithHeader("API-Token", apiToken)))
+	clientOpts := []prom.ClientOpt{
+		prom.WithHTTPOptions(prom.WithHeader("API-Token", apiToken)),
+	}
+
+	if opts.LogQueries {
+		log, err := zap.NewProduction()
+		if err != nil {
+			return nil, fmt.Errorf("unable to create production logger: %w", err)
+		}
+		clientOpts = append(clientOpts, prom.WithQueryLog(log))
+	}
+
+	return prom.NewClient(opts.ServerURL, clientOpts...)
 }
