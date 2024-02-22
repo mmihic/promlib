@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mmihic/golib/src/pkg/cli"
+
 	"promlib/src/pkg/prom"
 	"promlib/src/pkg/prom/promcli"
 )

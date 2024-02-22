@@ -14,8 +14,10 @@ import (
 )
 
 func TestPromClient(t *testing.T) {
-	c, err := NewClient("https://meta.chronosphere.io/data/m3/",
-		WithHTTPOptions(WithHeader("API-Token", os.Getenv("CHRONO_API_TOKEN"))))
+	apiToken := os.Getenv("API_TOKEN")
+	baseURL := os.Getenv("BASE_URL")
+
+	c, err := NewClient(baseURL, WithHTTPOptions(WithHeader("API-Token", apiToken)))
 
 	require.NoError(t, err)
 

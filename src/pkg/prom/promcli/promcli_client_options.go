@@ -4,20 +4,15 @@ package promcli
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"promlib/src/pkg/prom"
 )
 
-const (
-	baseURL = "https://%s.chronosphere.io/data/m3/"
-)
-
 // ClientOptions are options for creating a client on the command line.
 type ClientOptions struct {
 	APITokenFile string `help:"file containing the API token"`
-	Domain       string `short:"d" default:"meta" required:"" help:"tenant to query"`
+	ServerURL    string `name:"server-url" short:"s" required:"" help:"Prometheus server URL"`
 }
 
 // PromClient returns a prom PromClient.
@@ -34,13 +29,13 @@ func (opts *ClientOptions) PromClient(_ context.Context) (prom.Client, error) {
 	}
 
 	if len(apiToken) == 0 {
-		apiToken = os.Getenv("CHRONO_API_TOKEN")
+		apiToken = os.Getenv("PROM_API_TOKEN")
 	}
 
 	if len(apiToken) == 0 {
-		return nil, errors.New("neither --api-token-file nor CHRONO_API_TOKEN env var are set")
+		return nil, errors.New("neither --api-token-file nor PROM_API_TOKEN env var are set")
 	}
 
-	return prom.NewClient(fmt.Sprintf(baseURL, opts.Domain),
+	return prom.NewClient(opts.ServerURL,
 		prom.WithHTTPOptions(prom.WithHeader("API-Token", apiToken)))
 }
