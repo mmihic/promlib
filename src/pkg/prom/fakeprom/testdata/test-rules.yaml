@@ -1,0 +1,82 @@
+instant_queries:
+  - target:
+      # Has a target time
+      when: "2023-04-06T00:35:15Z"
+      query: "sum(up)"
+    result: >
+      { "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": [
+            {
+              "metric": {"cluster":"zed", "namespace":"bar"},
+              "value": [ 1708028165.516, "2930" ]
+            }
+          ]
+        }
+      }
+
+  - target:
+      # No target time
+      query: "sum(up)"
+    result: >
+      { "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": [
+            {
+              "metric": {"cluster":"zed", "namespace":"mork"},
+              "value": [ 1708028165.516, "92905" ]
+            }
+          ]
+        }
+      }
+
+  - target:
+      # Returns an error
+      query: "avg(up)"
+    err: "this is an error"
+
+range_queries:
+  - target:
+      start_time: "2023-04-06T00:35:15Z"
+      end_time: "2023-04-06T00:36:15Z"
+      query: "sum(up)"
+    result: >
+      { "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": [
+            {
+              "metric": {"cluster":"zed", "namespace":"bar"},
+              "value": [ 1708028165.516, "2930" ]
+            }
+          ]
+        }
+      }
+      
+
+  - target:
+      # No start or end time
+      query: "sum(up)"
+    result: >
+      { "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": [
+            {
+              "metric": {"cluster":"zed", "namespace":"mork"},
+              "value": [ 1708028165.516, "92905" ]
+            }
+          ]
+        }
+      }
+
+  # Error example
+  - target:
+      query: "avg(up)"
+    err: "this was an error"
+
+
+
+
