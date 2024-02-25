@@ -3,7 +3,6 @@ package fakeprom
 import (
 	"encoding/json"
 	"errors"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -16,21 +15,21 @@ type QueryMatcher[T any] interface {
 }
 
 // A Rule contains a target query and a result - either an error or JSON.
-type Rule[T QueryMatcher[T]] struct {
+type Rule[T QueryMatcher[T], R any] struct {
 	Name   string
 	Target T
 	Err    error
-	Result *prom.Result
+	Result *R
 }
 
 // Matches returns true if this rule matches a given query.
-func (r Rule[T]) Matches(other T) bool {
+func (r Rule[T, R]) Matches(other T) bool {
 	return r.Target.Matches(other)
 }
 
 // UnmarshalJSON unmarshals the rule as JSON.
-func (r *Rule[T]) UnmarshalJSON(b []byte) error {
-	var repr ruleRepr[T]
+func (r *Rule[T, R]) UnmarshalJSON(b []byte) error {
+	var repr ruleRepr[T, R]
 	if err := json.Unmarshal(b, &repr); err != nil {
 		return err
 	}
@@ -45,14 +44,14 @@ func (r *Rule[T]) UnmarshalJSON(b []byte) error {
 }
 
 // MarshalJSON marshals the rule as JSON.
-func (r *Rule[T]) MarshalJSON() ([]byte, error) {
-	repr := ruleRepr[T]{
+func (r *Rule[T, R]) MarshalJSON() ([]byte, error) {
+	repr := ruleRepr[T, R]{
 		Name:   r.Name,
 		Target: r.Target,
 	}
 
 	if r.Result != nil {
-		resultJSON, err := r.Result.MarshalJSON()
+		resultJSON, err := json.MarshalIndent(r.Result, "", "  ")
 		if err != nil {
 			return nil, err
 		}
@@ -68,8 +67,8 @@ func (r *Rule[T]) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalYAML unmarshals the rule as YAML.
-func (r *Rule[T]) UnmarshalYAML(n *yaml.Node) error {
-	var repr ruleRepr[T]
+func (r *Rule[T, R]) UnmarshalYAML(n *yaml.Node) error {
+	var repr ruleRepr[T, R]
 	if err := n.Decode(&repr); err != nil {
 		return err
 	}
@@ -86,26 +85,26 @@ func (r *Rule[T]) UnmarshalYAML(n *yaml.Node) error {
 // MarshalYAML marshals the rule as YAML.
 
 // A ruleRepr is the external (JSON, YAML) representation of a rule
-type ruleRepr[T QueryMatcher[T]] struct {
+type ruleRepr[T QueryMatcher[T], R any] struct {
 	Name   string `json:"name" yaml:"name"`
 	Target T      `json:"target" yaml:"target"`
 	Err    string `json:"err,omitempty" yaml:"err,omitempty"`
 	Result string `json:"result,omitempty" yaml:"result,omitempty"`
 }
 
-func (repr ruleRepr[T]) toRule() (Rule[T], error) {
-	r := Rule[T]{
+func (repr ruleRepr[T, R]) toRule() (Rule[T, R], error) {
+	r := Rule[T, R]{
 		Name:   repr.Name,
 		Target: repr.Target,
 	}
 
 	if repr.Result != "" {
-		result, err := prom.ParseResult(strings.NewReader(repr.Result))
-		if err != nil {
+		var result R
+		if err := json.Unmarshal([]byte(repr.Result), &result); err != nil {
 			return r, err
 		}
 
-		r.Result = result
+		r.Result = &result
 	}
 
 	if repr.Err != "" {
@@ -117,14 +116,14 @@ func (repr ruleRepr[T]) toRule() (Rule[T], error) {
 
 // Rules are fakeprom rules.
 type Rules struct {
-	InstantQueries []Rule[InstantQuery] `json:"instant_queries" yaml:"instant_queries"`
-	RangeQueries   []Rule[RangeQuery]   `json:"range_queries" yaml:"range_queries"`
+	InstantQueries []Rule[InstantQuery, prom.Result] `json:"instant_queries" yaml:"instant_queries"`
+	RangeQueries   []Rule[RangeQuery, prom.Result]   `json:"range_queries" yaml:"range_queries"`
 }
 
 var (
-	_ json.Unmarshaler = &Rule[RangeQuery]{}
-	_ yaml.Unmarshaler = &Rule[RangeQuery]{}
+	_ json.Unmarshaler = &Rule[RangeQuery, prom.Result]{}
+	_ yaml.Unmarshaler = &Rule[RangeQuery, prom.Result]{}
 
-	_ yaml.Unmarshaler = &Rule[InstantQuery]{}
-	_ json.Unmarshaler = &Rule[InstantQuery]{}
+	_ yaml.Unmarshaler = &Rule[InstantQuery, prom.Result]{}
+	_ json.Unmarshaler = &Rule[InstantQuery, prom.Result]{}
 )
