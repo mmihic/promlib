@@ -14,8 +14,8 @@ import (
 
 // Client is a fake prom client.
 type Client interface {
-	AddInstantQueryRules(rules ...Rule[InstantQuery, prom.Result])
-	AddRangeQueryRules(rules ...Rule[RangeQuery, prom.Result])
+	AddInstantQueryRules(rules ...InstantQueryRule)
+	AddRangeQueryRules(rules ...RangeQueryRule)
 	prom.Client
 }
 
@@ -34,15 +34,15 @@ func NewClientWithRules(rules *Rules) Client {
 }
 
 type client struct {
-	instants []Rule[InstantQuery, prom.Result]
-	ranges   []Rule[RangeQuery, prom.Result]
+	instants InstantQueryRules
+	ranges   RangeQueryRules
 }
 
-func (c *client) AddInstantQueryRules(rules ...Rule[InstantQuery, prom.Result]) {
+func (c *client) AddInstantQueryRules(rules ...InstantQueryRule) {
 	c.instants = append(c.instants, rules...)
 }
 
-func (c *client) AddRangeQueryRules(rules ...Rule[RangeQuery, prom.Result]) {
+func (c *client) AddRangeQueryRules(rules ...RangeQueryRule) {
 	c.ranges = append(c.ranges, rules...)
 }
 

@@ -116,14 +116,23 @@ func (repr ruleRepr[T, R]) toRule() (Rule[T, R], error) {
 
 // Rules are fakeprom rules.
 type Rules struct {
-	InstantQueries []Rule[InstantQuery, prom.Result] `json:"instant_queries" yaml:"instant_queries"`
-	RangeQueries   []Rule[RangeQuery, prom.Result]   `json:"range_queries" yaml:"range_queries"`
+	InstantQueries InstantQueryRules `json:"instant_queries" yaml:"instant_queries"`
+	RangeQueries   RangeQueryRules   `json:"range_queries" yaml:"range_queries"`
 }
 
-var (
-	_ json.Unmarshaler = &Rule[RangeQuery, prom.Result]{}
-	_ yaml.Unmarshaler = &Rule[RangeQuery, prom.Result]{}
+// Rule type aliases.
+type (
+	InstantQueryRule  = Rule[InstantQuery, prom.Result]
+	InstantQueryRules = []Rule[InstantQuery, prom.Result]
 
-	_ yaml.Unmarshaler = &Rule[InstantQuery, prom.Result]{}
-	_ json.Unmarshaler = &Rule[InstantQuery, prom.Result]{}
+	RangeQueryRule  = Rule[RangeQuery, prom.Result]
+	RangeQueryRules = []Rule[RangeQuery, prom.Result]
+)
+
+var (
+	_ json.Unmarshaler = &RangeQueryRule{}
+	_ yaml.Unmarshaler = &RangeQueryRule{}
+
+	_ yaml.Unmarshaler = &InstantQueryRule{}
+	_ json.Unmarshaler = &InstantQueryRule{}
 )
