@@ -9,11 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseResult_Matrix(t *testing.T) {
-
-}
-
-func TestParseResult_Vector(t *testing.T) {
+func TestJSON_Vector(t *testing.T) {
 	const asJSON = `
 {
   "status": "success",

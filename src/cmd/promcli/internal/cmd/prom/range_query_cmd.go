@@ -12,10 +12,10 @@ import (
 type RangeQuery struct {
 	BaseCommand
 
-	Start string `short:"s" help:"start date for the query" required:""`
-	End   string `short:"e" help:"end date for the query" required:""`
-	Step  string `short:"p" help:"step function"`
-	Query string `short:"q" required:"" help:"query to run"`
+	Start string `help:"start date for the query" required:""`
+	End   string `help:"end date for the query" required:""`
+	Step  string `help:"step function"`
+	Query string `short:"q" help:"query to run" required:""`
 }
 
 // Run runs the command.

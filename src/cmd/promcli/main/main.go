@@ -11,8 +11,10 @@ import (
 )
 
 type Commands struct {
-	InstantQuery prom.InstantQuery `cmd:"" help:"runs an instant query"`
-	RangeQuery   prom.RangeQuery   `cmd:"" help:"runs a range query"`
+	Instant prom.InstantQuery `cmd:"" help:"runs an instant query"`
+	Range   prom.RangeQuery   `cmd:"" help:"runs a range query"`
+	Series  prom.SeriesQuery  `cmd:"" help:"pulls series matching an optional set of selectors"`
+	Labels  prom.LabelQuery   `cmd:"" help:"pulls label names matching an optional set of selectors"`
 }
 
 func main() {

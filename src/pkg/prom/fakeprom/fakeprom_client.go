@@ -4,9 +4,9 @@ package fakeprom
 
 import (
 	"context"
-	"net/http"
 	"time"
 
+	"github.com/mmihic/golib/src/pkg/set"
 	"github.com/prometheus/common/model"
 
 	"promlib/src/pkg/prom"
@@ -16,6 +16,8 @@ import (
 type Client interface {
 	AddInstantQueryRules(rules ...InstantQueryRule)
 	AddRangeQueryRules(rules ...RangeQueryRule)
+	AddLabelQueryRules(rules ...LabelQueryRule)
+	AddSeriesQueryRules(rules ...SeriesQueryRule)
 	prom.Client
 }
 
@@ -30,12 +32,16 @@ func NewClientWithRules(rules *Rules) Client {
 	return &client{
 		instants: rules.InstantQueries,
 		ranges:   rules.RangeQueries,
+		series:   rules.SeriesQueries,
+		labels:   rules.LabelQueries,
 	}
 }
 
 type client struct {
 	instants InstantQueryRules
 	ranges   RangeQueryRules
+	labels   LabelQueryRules
+	series   SeriesQueryRules
 }
 
 func (c *client) AddInstantQueryRules(rules ...InstantQueryRule) {
@@ -44,6 +50,14 @@ func (c *client) AddInstantQueryRules(rules ...InstantQueryRule) {
 
 func (c *client) AddRangeQueryRules(rules ...RangeQueryRule) {
 	c.ranges = append(c.ranges, rules...)
+}
+
+func (c *client) AddLabelQueryRules(rules ...LabelQueryRule) {
+	c.labels = append(c.labels, rules...)
+}
+
+func (c *client) AddSeriesQueryRules(rules ...SeriesQueryRule) {
+	c.series = append(c.series, rules...)
 }
 
 func (c *client) RangeQuery(q string) prom.RangeQuery {
@@ -104,20 +118,7 @@ func (q RangeQuery) Matches(other RangeQuery) bool {
 
 // Do executes the range query.
 func (q RangeQuery) Do(_ context.Context) (*prom.Result, error) {
-	for _, canned := range q.c.ranges {
-		if !canned.Matches(q) {
-			continue
-		}
-
-		if canned.Err != nil {
-			return nil, canned.Err
-		}
-
-		return canned.Result, nil
-	}
-
-	return nil, prom.NewErrorf(http.StatusNotFound,
-		"matcher for query '%s' not found", q.Query)
+	return FindMatchingResult(q.c.ranges, q)
 }
 
 // InstantQuery returns a new instant query.
@@ -137,19 +138,7 @@ type InstantQuery struct {
 
 // Do executes the instant query.
 func (q InstantQuery) Do(_ context.Context) (*prom.Result, error) {
-	for _, canned := range q.c.instants {
-		if !canned.Matches(q) {
-			continue
-		}
-
-		if canned.Err != nil {
-			return nil, canned.Err
-		}
-
-		return canned.Result, nil
-	}
-
-	return nil, prom.NewErrorf(http.StatusNotFound, "matcher for query '%s' not found", q.Query)
+	return FindMatchingResult(q.c.instants, q)
 }
 
 // Time sets the time for the instant query.
@@ -170,4 +159,106 @@ func (q InstantQuery) Matches(other InstantQuery) bool {
 	}
 
 	return eq
+}
+
+func (c *client) LabelQuery() prom.LabelQuery {
+	return LabelQuery{
+		c: c,
+	}
+}
+
+// LabelQuery is a fake query for labels.
+type LabelQuery struct {
+	c *client
+
+	StartTime time.Time       `json:"start_time" yaml:"start_time"`
+	EndTime   time.Time       `json:"end_time" yaml:"end_time"`
+	Sels      set.Set[string] `json:"selectors" yaml:"selectors"`
+}
+
+func (q LabelQuery) Start(t time.Time) prom.LabelQuery {
+	q.StartTime = t
+	return q
+}
+
+func (q LabelQuery) End(t time.Time) prom.LabelQuery {
+	q.EndTime = t
+	return q
+}
+
+func (q LabelQuery) Selectors(sels []string) prom.LabelQuery {
+	q.Sels = set.NewSet(sels...)
+	return q
+}
+
+func (q LabelQuery) Matches(other LabelQuery) bool {
+	if !q.StartTime.IsZero() && !q.StartTime.Equal(other.StartTime) {
+		return false
+	}
+
+	if !q.EndTime.IsZero() && !q.EndTime.Equal(other.EndTime) {
+		return false
+	}
+
+	return q.Sels.Equal(other.Sels)
+}
+
+func (q LabelQuery) Do(_ context.Context) ([]string, error) {
+	r, err := FindMatchingResult(q.c.labels, q)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Labels, nil
+}
+
+func (c *client) SeriesQuery() prom.SeriesQuery {
+	return SeriesQuery{
+		c: c,
+	}
+}
+
+// SeriesQuery is a fake query for labels.
+type SeriesQuery struct {
+	c *client
+
+	StartTime time.Time       `json:"start_time" yaml:"start_time"`
+	EndTime   time.Time       `json:"end_time" yaml:"end_time"`
+	Sels      set.Set[string] `json:"selectors" yaml:"selectors"`
+}
+
+func (q SeriesQuery) Start(t time.Time) prom.SeriesQuery {
+	q.StartTime = t
+	return q
+}
+
+func (q SeriesQuery) End(t time.Time) prom.SeriesQuery {
+	q.EndTime = t
+	return q
+}
+
+func (q SeriesQuery) Selectors(sels []string) prom.SeriesQuery {
+	q.Sels = set.NewSet(sels...)
+	return q
+}
+
+func (q SeriesQuery) Matches(other SeriesQuery) bool {
+	if !q.StartTime.IsZero() && !q.StartTime.Equal(other.StartTime) {
+		return false
+	}
+
+	if !q.EndTime.IsZero() && !q.EndTime.Equal(other.EndTime) {
+		return false
+	}
+
+	return q.Sels.Equal(other.Sels)
+}
+
+func (q SeriesQuery) Do(_ context.Context) ([]model.LabelSet, error) {
+	r, err := FindMatchingResult(q.c.series, q)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Series, nil
 }

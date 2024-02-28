@@ -3,7 +3,9 @@ package fakeprom
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 
+	"github.com/prometheus/common/model"
 	"gopkg.in/yaml.v3"
 
 	"promlib/src/pkg/prom"
@@ -82,8 +84,6 @@ func (r *Rule[T, R]) UnmarshalYAML(n *yaml.Node) error {
 	return nil
 }
 
-// MarshalYAML marshals the rule as YAML.
-
 // A ruleRepr is the external (JSON, YAML) representation of a rule
 type ruleRepr[T QueryMatcher[T], R any] struct {
 	Name   string `json:"name" yaml:"name"`
@@ -118,16 +118,46 @@ func (repr ruleRepr[T, R]) toRule() (Rule[T, R], error) {
 type Rules struct {
 	InstantQueries InstantQueryRules `json:"instant_queries" yaml:"instant_queries"`
 	RangeQueries   RangeQueryRules   `json:"range_queries" yaml:"range_queries"`
+	LabelQueries   LabelQueryRules   `json:"label_queries" yaml:"label_queries"`
+	SeriesQueries  SeriesQueryRules  `json:"series_queries" yaml:"series_queries"`
 }
 
 // Rule type aliases.
 type (
 	InstantQueryRule  = Rule[InstantQuery, prom.Result]
 	InstantQueryRules = []Rule[InstantQuery, prom.Result]
-
-	RangeQueryRule  = Rule[RangeQuery, prom.Result]
-	RangeQueryRules = []Rule[RangeQuery, prom.Result]
+	RangeQueryRule    = Rule[RangeQuery, prom.Result]
+	RangeQueryRules   = []Rule[RangeQuery, prom.Result]
+	LabelQueryRule    = Rule[LabelQuery, LabelResults]
+	LabelQueryRules   = []Rule[LabelQuery, LabelResults]
+	SeriesQueryRule   = Rule[SeriesQuery, SeriesResults]
+	SeriesQueryRules  = []Rule[SeriesQuery, SeriesResults]
 )
+
+// LabelResults are the results of a labels query.
+type LabelResults struct {
+	Labels []string `json:"data" yaml:"data"`
+}
+
+// SeriesResults are the results of a series query.
+type SeriesResults struct {
+	Series []model.LabelSet `json:"data" yaml:"data"`
+}
+
+// FindMatchingResult finds the result that matches a given query from a set of rules.
+func FindMatchingResult[T QueryMatcher[T], R any](rules []Rule[T, R], query T) (*R, error) {
+	for _, rule := range rules {
+		if rule.Matches(query) {
+			if rule.Err != nil {
+				return nil, rule.Err
+			}
+
+			return rule.Result, nil
+		}
+	}
+
+	return nil, prom.NewErrorf(http.StatusNotFound, "matcher not found")
+}
 
 var (
 	_ json.Unmarshaler = &RangeQueryRule{}

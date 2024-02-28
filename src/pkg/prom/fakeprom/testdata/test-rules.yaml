@@ -77,6 +77,37 @@ range_queries:
       query: "avg(up)"
     err: "this was an error"
 
+series_queries:
+  - target:
+      start_time: "2023-04-06T00:35:15Z"
+      end_time: "2023-04-06T00:36:15Z"
+      selectors: ["down", "up"]
 
+    result: >
+      { "data": [ 
+          {"cluster": "foo", "namespace": "bar"}, 
+          {"cluster": "boo"} 
+        ]
+      }
 
+  - target:
+      selectors: ["down", "up"]
+
+    result: >
+      { "data":  [ {"cluster": "ken", "namespace": "blend"} ] }
+
+label_queries:
+  - target:
+      start_time: "2023-04-06T00:35:15Z"
+      end_time: "2023-04-06T00:36:15Z"
+      selectors: ["down", "up"]
+
+    result: >
+      { "data": [ "foo", "bar" ] }
+
+  - target:
+      selectors: ["down", "up"]
+
+    result: >
+      { "data": [ "zed", "med" ] }
 

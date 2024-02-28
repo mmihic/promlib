@@ -120,3 +120,18 @@ func (d data) ToValue() (model.Value, error) {
 		return nil, fmt.Errorf("unexpected value type %q", d.Type)
 	}
 }
+
+type labelsResult struct {
+	Status string   `json:"status"`
+	Data   []string `json:"data"`
+}
+
+type seriesResult struct {
+	Status string           `json:"status"`
+	Data   []model.LabelSet `json:"data"`
+}
+
+var (
+	_ json.Marshaler   = &Result{}
+	_ json.Unmarshaler = &Result{}
+)
