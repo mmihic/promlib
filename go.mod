@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/alecthomas/kong v0.8.1
 	github.com/jonboulle/clockwork v0.4.0
-	github.com/mmihic/golib v0.1.10
+	github.com/mmihic/golib v0.1.11
 	github.com/prometheus/common v0.46.0
 	github.com/prometheus/prometheus v0.50.0
 	github.com/stretchr/testify v1.8.4
@@ -22,6 +22,7 @@ require (
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/grafana/regexp v0.0.0-20221122212121-6b5c0a4cb7fd // indirect
+	github.com/mmihic/httplib v0.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.18.0 // indirect

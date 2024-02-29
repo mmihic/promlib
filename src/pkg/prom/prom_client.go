@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jonboulle/clockwork"
-	"github.com/mmihic/golib/src/pkg/httpclient"
+	"github.com/mmihic/httplib/src/pkg/httplib"
 	"github.com/prometheus/common/model"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -69,14 +69,14 @@ type Client interface {
 type ClientOpt func(*client)
 
 // WithHTTPClient sets the explicit HTTP client for talking to Prometheus.
-func WithHTTPClient(httpClient httpclient.Client) ClientOpt {
+func WithHTTPClient(httpClient httplib.Client) ClientOpt {
 	return func(c *client) {
 		c.http = httpClient
 	}
 }
 
 // WithHTTPOptions sets options for the HTTP client used to talk to Prometheus.
-func WithHTTPOptions(opt ...httpclient.CallOption) ClientOpt {
+func WithHTTPOptions(opt ...httplib.CallOption) ClientOpt {
 	return func(c *client) {
 		c.callOpts = append(c.callOpts, opt...)
 	}
@@ -106,7 +106,7 @@ func NewClient(baseURL string, opts ...ClientOpt) (Client, error) {
 	}
 
 	if c.http == nil {
-		httpc, err := httpclient.NewClient(baseURL, c.callOpts...)
+		httpc, err := httplib.NewClient(baseURL, httplib.WithDefaultCallOptions(c.callOpts...))
 		if err != nil {
 			return nil, err
 		}
@@ -126,8 +126,8 @@ func NewClient(baseURL string, opts ...ClientOpt) (Client, error) {
 }
 
 type client struct {
-	http     httpclient.Client
-	callOpts []httpclient.CallOption
+	http     httplib.Client
+	callOpts []httplib.CallOption
 	queryLog *zap.Logger
 	queryID  atomic.Uint64
 	clock    clockwork.Clock
@@ -167,11 +167,12 @@ func (q instantQuery) Do(ctx context.Context) (*Result, error) {
 		zap.Time("time", q.t))
 
 	var r Result
-	if err := q.c.http.Post(ctx, pathInstantQuery, FormURLEncoded(p), httpclient.JSON(&r)); err != nil {
+	if err := q.c.http.Post(ctx, pathInstantQuery,
+		httplib.FormURLEncoded(p), httplib.JSON(&r)); err != nil {
 		q.c.queryLog.Error("instant-query",
 			zap.Uint64("id", qid),
 			zap.Error(err))
-		if httperr, ok := httpclient.UnwrapError(err); ok {
+		if httperr, ok := httplib.UnwrapError(err); ok {
 			return nil, NewError(httperr.StatusCode, httperr.Body.String())
 		}
 		return nil, err
@@ -242,12 +243,13 @@ func (q rangeQuery) Do(ctx context.Context) (*Result, error) {
 		zap.Duration("step", time.Duration(q.step)))
 
 	var r Result
-	if err := q.c.http.Post(ctx, pathRangeQuery, FormURLEncoded(p), httpclient.JSON(&r)); err != nil {
+	if err := q.c.http.Post(ctx, pathRangeQuery,
+		httplib.FormURLEncoded(p), httplib.JSON(&r)); err != nil {
 		q.c.queryLog.Error("range-query",
 			zap.Uint64("id", qid),
 			zap.Error(err))
 
-		if httperr, ok := httpclient.UnwrapError(err); ok {
+		if httperr, ok := httplib.UnwrapError(err); ok {
 			return nil, NewError(httperr.StatusCode, httperr.Body.String())
 		}
 
@@ -318,12 +320,13 @@ func (q labelQuery) Do(ctx context.Context) ([]string, error) {
 		zap.Time("end", q.end))
 
 	var r labelsResult
-	if err := q.c.http.Post(ctx, pathLabelQuery, FormURLEncoded(p), httpclient.JSON(&r)); err != nil {
+	if err := q.c.http.Post(ctx, pathLabelQuery,
+		httplib.FormURLEncoded(p), httplib.JSON(&r)); err != nil {
 		q.c.queryLog.Error("labels-query",
 			zap.Uint64("id", qid),
 			zap.Error(err))
 
-		if httperr, ok := httpclient.UnwrapError(err); ok {
+		if httperr, ok := httplib.UnwrapError(err); ok {
 			return nil, NewError(httperr.StatusCode, httperr.Body.String())
 		}
 
@@ -393,12 +396,13 @@ func (q seriesQuery) Do(ctx context.Context) ([]model.LabelSet, error) {
 		zap.Time("end", q.end))
 
 	var r seriesResult
-	if err := q.c.http.Post(ctx, pathSeriesQuery, FormURLEncoded(p), httpclient.JSON(&r)); err != nil {
+	if err := q.c.http.Post(ctx, pathSeriesQuery,
+		httplib.FormURLEncoded(p), httplib.JSON(&r)); err != nil {
 		q.c.queryLog.Error("series-query",
 			zap.Uint64("id", qid),
 			zap.Error(err))
 
-		if httperr, ok := httpclient.UnwrapError(err); ok {
+		if httperr, ok := httplib.UnwrapError(err); ok {
 			return nil, NewError(httperr.StatusCode, httperr.Body.String())
 		}
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mmihic/httplib/src/pkg/httplib"
 	"go.uber.org/zap"
 
 	"promlib/src/pkg/prom"
@@ -37,7 +38,7 @@ func (opts *ClientOptions) PromClient(_ context.Context) (prom.Client, error) {
 	}
 
 	clientOpts := []prom.ClientOpt{
-		prom.WithHTTPOptions(prom.WithHeader("API-Token", apiToken)),
+		prom.WithHTTPOptions(httplib.SetHeader("API-Token", apiToken)),
 	}
 
 	if opts.LogQueries {
