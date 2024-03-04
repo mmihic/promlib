@@ -1,4 +1,4 @@
-module github.com/mmihic/golib
+module github.com/mmihic/promlib
 
 go 1.20
 
