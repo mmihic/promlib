@@ -8,7 +8,7 @@ import (
 	"github.com/prometheus/common/model"
 	"gopkg.in/yaml.v3"
 
-	"promlib/src/pkg/prom"
+	"github.com/mmihic/promlib/src/pkg/prom"
 )
 
 // A QueryMatcher matches other queries.

@@ -9,7 +9,7 @@ import (
 	"github.com/mmihic/golib/src/pkg/set"
 	"github.com/prometheus/common/model"
 
-	"promlib/src/pkg/prom"
+	"github.com/mmihic/promlib/src/pkg/prom"
 )
 
 // Client is a fake prom client.
