@@ -19,10 +19,10 @@ const (
 
 // ClientOptions are options for creating a client on the command line.
 type ClientOptions struct {
-	APITokenFile string `help:"file containing the API token"`
-	ServerURL    string `name:"server-url" short:"s" help:"Prometheus server URL"`
-	Tenant       string `name:"tenant" short:"t" help:"name of the Chronosphere tenant to query"`
-	LogQueries   bool   `help:"set to log queries"`
+	APITokenFile  string `help:"file containing the API token"`
+	PromServerURL string `name:"prom-server-url" help:"Prometheus server URL"`
+	SourceTenant  string `name:"source-tenant" help:"name of the Chronosphere tenant to query" default:"meta"`
+	LogQueries    bool   `help:"set to log queries"`
 }
 
 // PromClient returns a prom PromClient.
@@ -55,12 +55,12 @@ func (opts *ClientOptions) PromClient(_ context.Context) (prom.Client, error) {
 func (opts *ClientOptions) getBaseURL() (string, error) {
 	var baseURL string
 	switch {
-	case len(opts.ServerURL) != 0 && len(opts.Tenant) != 0:
-		return "", errors.New("only one of --tenant or --server-url must be specified")
-	case len(opts.ServerURL) != 0:
-		baseURL = opts.ServerURL
-	case len(opts.Tenant) != 0:
-		baseURL = fmt.Sprintf(chronoPrometheusURL, opts.Tenant)
+	case len(opts.PromServerURL) != 0 && len(opts.SourceTenant) != 0:
+		return "", errors.New("only one of --source-tenant or --prom-server-url must be specified")
+	case len(opts.PromServerURL) != 0:
+		baseURL = opts.PromServerURL
+	case len(opts.SourceTenant) != 0:
+		baseURL = fmt.Sprintf(chronoPrometheusURL, opts.SourceTenant)
 	}
 
 	if len(baseURL) == 0 {
