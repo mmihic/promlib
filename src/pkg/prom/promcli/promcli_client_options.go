@@ -10,7 +10,7 @@ import (
 	"github.com/mmihic/httplib/src/pkg/httplib"
 	"go.uber.org/zap"
 
-	"promlib/src/pkg/prom"
+	"github.com/mmihic/promlib/src/pkg/prom"
 )
 
 const (

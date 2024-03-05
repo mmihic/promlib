@@ -7,7 +7,7 @@ import (
 
 	"github.com/alecthomas/kong"
 
-	"promlib/src/cmd/promcli/internal/cmd/prom"
+	"github.com/mmihic/promlib/src/cmd/promcli/internal/cmd/prom"
 )
 
 type Commands struct {

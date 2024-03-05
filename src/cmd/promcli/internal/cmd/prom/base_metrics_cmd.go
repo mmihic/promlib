@@ -7,8 +7,8 @@ import (
 
 	"github.com/mmihic/golib/src/pkg/cli"
 
-	"promlib/src/pkg/prom"
-	"promlib/src/pkg/prom/promcli"
+	"github.com/mmihic/promlib/src/pkg/prom"
+	"github.com/mmihic/promlib/src/pkg/prom/promcli"
 )
 
 // BaseCommand is the base command for all prom CLI options.

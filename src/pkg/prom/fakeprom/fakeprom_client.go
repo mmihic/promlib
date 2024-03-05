@@ -187,7 +187,7 @@ func (q LabelQuery) End(t time.Time) prom.LabelQuery {
 }
 
 func (q LabelQuery) Selectors(sels []string) prom.LabelQuery {
-	q.Sels = set.NewSet(sels...)
+	q.Sels = set.New(sels...)
 	return q
 }
 
@@ -238,7 +238,7 @@ func (q SeriesQuery) End(t time.Time) prom.SeriesQuery {
 }
 
 func (q SeriesQuery) Selectors(sels []string) prom.SeriesQuery {
-	q.Sels = set.NewSet(sels...)
+	q.Sels = set.New(sels...)
 	return q
 }
 

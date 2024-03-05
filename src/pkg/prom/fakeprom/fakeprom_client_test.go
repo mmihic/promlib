@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
-	"promlib/src/pkg/prom"
+	"github.com/mmihic/promlib/src/pkg/prom"
 )
 
 func TestFakeProm_RangeQuery(t *testing.T) {
@@ -216,7 +216,7 @@ func TestFakeProm_LabelQuery(t *testing.T) {
 			LabelQuery{
 				StartTime: timex.MustParseTime(time.RFC3339, "2023-04-06T00:35:15Z"),
 				EndTime:   timex.MustParseTime(time.RFC3339, "2023-04-06T00:36:15Z"),
-				Sels:      set.NewSet("up", "down"),
+				Sels:      set.New("up", "down"),
 			},
 			[]string{"foo", "bar"},
 			"",
@@ -227,7 +227,7 @@ func TestFakeProm_LabelQuery(t *testing.T) {
 			LabelQuery{
 				StartTime: timex.MustParseTime(time.RFC3339, "2023-04-06T00:35:15Z"),
 				EndTime:   timex.MustParseTime(time.RFC3339, "2023-04-06T00:40:15Z"),
-				Sels:      set.NewSet("up", "down"),
+				Sels:      set.New("up", "down"),
 			},
 			[]string{"zed", "med"},
 			"",
@@ -272,7 +272,7 @@ func TestFakeProm_SeriesQuery(t *testing.T) {
 			SeriesQuery{
 				StartTime: timex.MustParseTime(time.RFC3339, "2023-04-06T00:35:15Z"),
 				EndTime:   timex.MustParseTime(time.RFC3339, "2023-04-06T00:36:15Z"),
-				Sels:      set.NewSet("up", "down"),
+				Sels:      set.New("up", "down"),
 			},
 			[]model.LabelSet{
 				{"cluster": "foo", "namespace": "bar"},
@@ -286,7 +286,7 @@ func TestFakeProm_SeriesQuery(t *testing.T) {
 			SeriesQuery{
 				StartTime: timex.MustParseTime(time.RFC3339, "2023-04-06T00:35:15Z"),
 				EndTime:   timex.MustParseTime(time.RFC3339, "2023-04-06T00:40:15Z"),
-				Sels:      set.NewSet("up", "down"),
+				Sels:      set.New("up", "down"),
 			},
 			[]model.LabelSet{
 				{"cluster": "ken", "namespace": "blend"},
