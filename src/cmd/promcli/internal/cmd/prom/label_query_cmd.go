@@ -3,18 +3,19 @@ package prom
 import (
 	"context"
 	"encoding/csv"
-	"fmt"
 	"io"
 
 	"github.com/mmihic/golib/src/pkg/cli"
+
+	"github.com/mmihic/promlib/src/pkg/prom/promcli"
 )
 
 // LabelQuery pulls labels matching a set of selectors.
 type LabelQuery struct {
 	BaseCommand
-	Start string   `help:"start date for the query"`
-	End   string   `help:"end date for the query"`
-	Sel   []string `help:"query to run"`
+	Start promcli.Time `help:"start date for the query"`
+	End   promcli.Time `help:"end date for the query"`
+	Sel   []string     `help:"query to run"`
 }
 
 func (cmd *LabelQuery) Run(ctx context.Context) error {
@@ -24,22 +25,12 @@ func (cmd *LabelQuery) Run(ctx context.Context) error {
 	}
 
 	q := c.LabelQuery()
-	if len(cmd.Start) != 0 {
-		start, err := parseTime(cmd.Start)
-		if err != nil {
-			return fmt.Errorf("invalid start: %w", err)
-		}
-
-		q = q.Start(start)
+	if !cmd.Start.AsTime().IsZero() {
+		q = q.Start(cmd.Start.AsTime())
 	}
 
-	if len(cmd.End) != 0 {
-		end, err := parseTime(cmd.End)
-		if err != nil {
-			return fmt.Errorf("invalid end: %w", err)
-		}
-
-		q = q.End(end)
+	if !cmd.End.AsTime().IsZero() {
+		q = q.End(cmd.End.AsTime())
 	}
 
 	q = q.Selectors(cmd.Sel)

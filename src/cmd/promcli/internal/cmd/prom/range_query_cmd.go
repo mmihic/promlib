@@ -2,50 +2,36 @@ package prom
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/prometheus/common/model"
+
+	"github.com/mmihic/promlib/src/pkg/prom/promcli"
 )
 
 // RangeQuery runs a range query.
 type RangeQuery struct {
 	BaseCommand
 
-	Start string `help:"start date for the query" required:""`
-	End   string `help:"end date for the query" required:""`
-	Step  string `help:"step function"`
-	Query string `short:"q" help:"query to run" required:""`
+	Start promcli.Time     `help:"start date for the query" required:""`
+	End   promcli.Time     `help:"end date for the query" required:""`
+	Step  promcli.Duration `help:"step function"`
+	Query string           `short:"q" help:"query to run" required:""`
 }
 
 // Run runs the command.
 func (cmd *RangeQuery) Run(ctx context.Context) error {
-	start, err := parseTime(cmd.Start)
-	if err != nil {
-		return fmt.Errorf("cannot parse 'start' as absolute or relative time: %w", err)
-	}
-
-	end, err := parseTime(cmd.End)
-	if err != nil {
-		return fmt.Errorf("cannot parse 'start' as absolute or relative time: %w", err)
-	}
-
 	client, err := cmd.PromClient(ctx)
 	if err != nil {
 		return err
 	}
 
 	q := client.RangeQuery(cmd.Query).
-		Start(start).
-		End(end)
+		Start(cmd.Start.AsTime()).
+		End(cmd.End.AsTime())
 
-	if cmd.Step != "" {
-		step, err := model.ParseDuration(cmd.Step)
-		if err != nil {
-			return fmt.Errorf("cannot parse 'step': %w", err)
-		}
-
-		q.Step(step)
+	if cmd.Step != 0 {
+		q = q.Step(cmd.Step.AsDuration())
 	}
 
 	result, err := q.Do(ctx)

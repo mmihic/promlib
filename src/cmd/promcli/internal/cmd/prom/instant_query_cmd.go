@@ -2,14 +2,15 @@ package prom
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/mmihic/promlib/src/pkg/prom/promcli"
 )
 
 // InstantQuery runs an instant query.
 type InstantQuery struct {
 	BaseCommand
-	Time  string `help:"the time to query, defaults to now"`
-	Query string `short:"q" required:"" help:"query to run"`
+	Time  promcli.Time `help:"the time to query, defaults to now"`
+	Query string       `short:"q" required:"" help:"query to run"`
 }
 
 // Run runs the command.
@@ -20,13 +21,8 @@ func (cmd *InstantQuery) Run(ctx context.Context) error {
 	}
 
 	q := client.InstantQuery(cmd.Query)
-	if len(cmd.Time) != 0 {
-		tm, err := parseTime(cmd.Time)
-		if err != nil {
-			return fmt.Errorf("invalid time: %w", err)
-		}
-
-		q = q.Time(tm)
+	if !cmd.Time.AsTime().IsZero() {
+		q = q.Time(cmd.Time.AsTime())
 	}
 
 	result, err := q.Do(ctx)
