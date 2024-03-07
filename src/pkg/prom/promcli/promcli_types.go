@@ -2,9 +2,11 @@ package promcli
 
 import (
 	"encoding"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/mmihic/golib/src/pkg/timex"
 	"github.com/prometheus/common/model"
 )
 
@@ -13,6 +15,10 @@ type Time time.Time
 
 // UnmarshalText unmarshals the text format of a time.
 func (tm *Time) UnmarshalText(b []byte) error {
+	if len(b) == 0 {
+		return errors.New("invalid time ''")
+	}
+
 	txt := string(b)
 
 	// Parse as absolute time
@@ -22,14 +28,37 @@ func (tm *Time) UnmarshalText(b []byte) error {
 		return nil
 	}
 
-	// Parse as relative time
-	d, err := model.ParseDuration(txt)
+	// Parse as a date
+	date, err := timex.ParseDate(txt)
 	if err == nil {
-		*tm = Time(time.Now().Add(-time.Duration(d)))
+		*tm = Time(date.DayStart())
 		return nil
 	}
 
-	return fmt.Errorf("invalid time %s", txt)
+	// Parse as month
+	month, err := timex.ParseMonthYear(txt)
+	if err == nil {
+		*tm = Time(month.MonthStart().DayStart())
+		return nil
+	}
+
+	// Parse as relative time
+	multiplier := 1
+	switch txt[0] {
+	case '-':
+		multiplier = -1
+		txt = txt[1:]
+	case '+':
+		txt = txt[1:]
+	}
+
+	d, err := model.ParseDuration(txt)
+	if err == nil {
+		*tm = Time(time.Now().Add(time.Duration(d) * time.Duration(multiplier)))
+		return nil
+	}
+
+	return fmt.Errorf("invalid time '%s'", txt)
 }
 
 // AsTime converts the Time to time.Time
