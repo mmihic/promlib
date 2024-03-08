@@ -19,6 +19,7 @@ const (
 type Client interface {
 	RangeQuery(q string) RangeQuery
 	InstantQuery(q string) InstantQuery
+	MonthlyQuery(q string) MonthlyQuery
 	LabelQuery() LabelQuery
 	SeriesQuery() SeriesQuery
 }

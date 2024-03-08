@@ -2,9 +2,6 @@ package prom
 
 import (
 	"context"
-	"time"
-
-	"github.com/prometheus/common/model"
 
 	"github.com/mmihic/promlib/src/pkg/prom/promcli"
 )
@@ -13,8 +10,8 @@ import (
 type RangeQuery struct {
 	BaseCommand
 
-	Start promcli.Time     `help:"start date for the query" required:""`
-	End   promcli.Time     `help:"end date for the query" required:""`
+	Start promcli.Time     `help:"start date for the query"`
+	End   promcli.Time     `help:"end date for the query"`
 	Step  promcli.Duration `help:"step function"`
 	Query string           `short:"q" help:"query to run" required:""`
 }
@@ -40,18 +37,4 @@ func (cmd *RangeQuery) Run(ctx context.Context) error {
 	}
 
 	return cmd.WriteResult(result)
-}
-
-func parseTime(s string) (time.Time, error) {
-	t, err := time.Parse(time.RFC3339, s)
-	if err == nil {
-		return t, nil
-	}
-
-	backDuration, err := model.ParseDuration(s)
-	if err == nil {
-		return time.Now().Add(-time.Duration(backDuration)), nil
-	}
-
-	return time.Time{}, err
 }

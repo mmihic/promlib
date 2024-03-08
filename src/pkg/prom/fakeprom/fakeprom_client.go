@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mmihic/golib/src/pkg/set"
+	"github.com/mmihic/golib/src/pkg/timex"
 	"github.com/prometheus/common/model"
 
 	"github.com/mmihic/promlib/src/pkg/prom"
@@ -18,6 +19,7 @@ type Client interface {
 	AddRangeQueryRules(rules ...RangeQueryRule)
 	AddLabelQueryRules(rules ...LabelQueryRule)
 	AddSeriesQueryRules(rules ...SeriesQueryRule)
+	AddMonthlyQueryRules(rules ...MonthlyQueryRule)
 	prom.Client
 }
 
@@ -34,6 +36,7 @@ func NewClientWithRules(rules *Rules) Client {
 		ranges:   rules.RangeQueries,
 		series:   rules.SeriesQueries,
 		labels:   rules.LabelQueries,
+		monthly:  rules.MonthlyQueries,
 	}
 }
 
@@ -42,6 +45,7 @@ type client struct {
 	ranges   RangeQueryRules
 	labels   LabelQueryRules
 	series   SeriesQueryRules
+	monthly  MonthlyQueryRules
 }
 
 func (c *client) AddInstantQueryRules(rules ...InstantQueryRule) {
@@ -58,6 +62,10 @@ func (c *client) AddLabelQueryRules(rules ...LabelQueryRule) {
 
 func (c *client) AddSeriesQueryRules(rules ...SeriesQueryRule) {
 	c.series = append(c.series, rules...)
+}
+
+func (c *client) AddMonthlyQueryRules(rules ...MonthlyQueryRule) {
+	c.monthly = append(c.monthly, rules...)
 }
 
 func (c *client) RangeQuery(q string) prom.RangeQuery {
@@ -105,6 +113,60 @@ func (q RangeQuery) Matches(other RangeQuery) bool {
 	}
 
 	if !q.EndTime.IsZero() && !q.EndTime.Equal(other.EndTime) {
+		return false
+	}
+
+	eq, err := QueryEqual(q.Query, other.Query)
+	if err != nil {
+		panic(err)
+	}
+
+	return eq
+}
+
+func (c *client) MonthlyQuery(q string) prom.MonthlyQuery {
+	return MonthlyQuery{
+		c:     c,
+		Query: q,
+	}
+}
+
+// MonthlyQuery is a monthly query.
+type MonthlyQuery struct {
+	c          *client
+	Query      string          `json:"query,omitempty" yaml:"query"`
+	StartMonth timex.MonthYear `json:"start" yaml:"start"`
+	EndMonth   timex.MonthYear `json:"end" yaml:"end"`
+}
+
+// Do executes the query.
+func (q MonthlyQuery) Do(_ context.Context) (*prom.Result, error) {
+	return FindMatchingResult(q.c.monthly, q)
+}
+
+// Start sets the start time for the query.
+func (q MonthlyQuery) Start(t timex.MonthYear) prom.MonthlyQuery {
+	q.StartMonth = t
+	return q
+}
+
+// End sets the end time for the query.
+func (q MonthlyQuery) End(t timex.MonthYear) prom.MonthlyQuery {
+	q.EndMonth = t
+	return q
+}
+
+func (q MonthlyQuery) MaxParallel(_ int) prom.MonthlyQuery {
+	return q
+}
+
+// Matches checks whether this query matches another query.
+func (q MonthlyQuery) Matches(other MonthlyQuery) bool {
+	if !q.StartMonth.IsZero() && !q.StartMonth.Equal(other.StartMonth) {
+		return false
+	}
+
+	if !q.EndMonth.IsZero() && !q.EndMonth.Equal(other.EndMonth) {
 		return false
 	}
 

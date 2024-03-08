@@ -16,6 +16,101 @@ import (
 	"github.com/mmihic/promlib/src/pkg/prom"
 )
 
+func TestFakeProm_MonthlyQuery(t *testing.T) {
+	c := requireTestClient(t)
+
+	for _, tt := range []struct {
+		name        string
+		q           MonthlyQuery
+		expected    *prom.Result
+		expectedErr string
+	}{
+		{
+			"matches all properties",
+			MonthlyQuery{
+				StartMonth: timex.MustParseMonthYear("2023-04"),
+				EndMonth:   timex.MustParseMonthYear("2023-05"),
+				Query:      "sum ( up )", // matches but not identical
+			},
+			&prom.Result{
+				Data: model.Vector{
+					&model.Sample{
+						Metric: model.Metric{
+							"cluster":   "zed",
+							"namespace": "bar",
+						},
+						Timestamp: 1708028165516,
+						Value:     2930,
+					},
+				},
+			}, "",
+		},
+
+		{
+			"matches query only",
+			MonthlyQuery{
+				StartMonth: timex.MustParseMonthYear("2023-04"),
+				EndMonth:   timex.MustParseMonthYear("2023-06"),
+				Query:      "sum ( up )", // matches but not identical
+			},
+			&prom.Result{
+				Data: model.Vector{
+					&model.Sample{
+						Metric: model.Metric{
+							"cluster":   "zed",
+							"namespace": "mork",
+						},
+						Timestamp: 1708028165516,
+						Value:     92905,
+					},
+				},
+			}, "",
+		},
+
+		{
+			"returns an error",
+			MonthlyQuery{
+				StartMonth: timex.MustParseMonthYear("2023-04"),
+				EndMonth:   timex.MustParseMonthYear("2023-05"),
+				Query:      "avg ( up )",
+			},
+			nil, "this was an error",
+		},
+
+		{
+			"does not match any rules",
+			MonthlyQuery{
+				StartMonth: timex.MustParseMonthYear("2023-05"),
+				EndMonth:   timex.MustParseMonthYear("2023-07"),
+				Query:      "min ( up )",
+			},
+			nil, "status_code: 404, msg=matcher not found",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			r, err := c.MonthlyQuery(tt.q.Query).
+				Start(tt.q.StartMonth).
+				End(tt.q.EndMonth).
+				Do(context.TODO())
+
+			if tt.expectedErr != "" {
+				if !assert.Error(t, err) {
+					return
+				}
+
+				assert.Contains(t, err.Error(), tt.expectedErr)
+				return
+			}
+
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			assert.Equal(t, tt.expected, r)
+		})
+	}
+}
+
 func TestFakeProm_RangeQuery(t *testing.T) {
 	c := requireTestClient(t)
 

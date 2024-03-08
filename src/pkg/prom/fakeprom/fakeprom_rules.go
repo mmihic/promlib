@@ -120,6 +120,7 @@ type Rules struct {
 	RangeQueries   RangeQueryRules   `json:"range_queries" yaml:"range_queries"`
 	LabelQueries   LabelQueryRules   `json:"label_queries" yaml:"label_queries"`
 	SeriesQueries  SeriesQueryRules  `json:"series_queries" yaml:"series_queries"`
+	MonthlyQueries MonthlyQueryRules `json:"monthly_queries" yaml:"monthly_queries"`
 }
 
 // Rule type aliases.
@@ -132,6 +133,8 @@ type (
 	LabelQueryRules   = []Rule[LabelQuery, LabelResults]
 	SeriesQueryRule   = Rule[SeriesQuery, SeriesResults]
 	SeriesQueryRules  = []Rule[SeriesQuery, SeriesResults]
+	MonthlyQueryRule  = Rule[MonthlyQuery, prom.Result]
+	MonthlyQueryRules = []Rule[MonthlyQuery, prom.Result]
 )
 
 // LabelResults are the results of a labels query.

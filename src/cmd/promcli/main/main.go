@@ -13,6 +13,7 @@ import (
 type Commands struct {
 	Instant prom.InstantQuery `cmd:"" help:"runs an instant query"`
 	Range   prom.RangeQuery   `cmd:"" help:"runs a range query"`
+	Monthly prom.MonthlyQuery `cmd:"" help:"runs a range query over months"`
 	Series  prom.SeriesQuery  `cmd:"" help:"pulls series matching an optional set of selectors"`
 	Labels  prom.LabelQuery   `cmd:"" help:"pulls label names matching an optional set of selectors"`
 }
