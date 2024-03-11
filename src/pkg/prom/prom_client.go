@@ -2,10 +2,10 @@
 package prom
 
 import (
-	"github.com/jonboulle/clockwork"
 	"github.com/mmihic/httplib/src/pkg/httplib"
-	"go.uber.org/atomic"
 	"go.uber.org/zap"
+
+	"github.com/mmihic/promlib/src/pkg/prom/querylog"
 )
 
 const (
@@ -42,16 +42,9 @@ func WithHTTPOptions(opt ...httplib.CallOption) ClientOpt {
 }
 
 // WithQueryLog sets a Logger for queries and query timers issued by the client.
-func WithQueryLog(log *zap.Logger) ClientOpt {
+func WithQueryLog(log *zap.Logger, logResponses bool) ClientOpt {
 	return func(c *client) {
-		c.queryLog = log
-	}
-}
-
-// WithClock sets the clock used by the client.
-func WithClock(clock clockwork.Clock) ClientOpt {
-	return func(c *client) {
-		c.clock = clock
+		c.queryLog = querylog.New(log, logResponses)
 	}
 }
 
@@ -75,10 +68,7 @@ func NewClient(baseURL string, opts ...ClientOpt) (Client, error) {
 	c.callOpts = nil
 
 	if c.queryLog == nil {
-		c.queryLog = zap.NewNop()
-	}
-	if c.clock == nil {
-		c.clock = clockwork.NewRealClock()
+		c.queryLog = querylog.NewNop()
 	}
 
 	return c, nil
@@ -87,7 +77,5 @@ func NewClient(baseURL string, opts ...ClientOpt) (Client, error) {
 type client struct {
 	http     httplib.Client
 	callOpts []httplib.CallOption
-	queryLog *zap.Logger
-	queryID  atomic.Uint64
-	clock    clockwork.Clock
+	queryLog querylog.Logger
 }

@@ -23,6 +23,7 @@ type ClientOptions struct {
 	PromServerURL string `name:"prom-server-url" help:"Prometheus server URL"`
 	SourceTenant  string `name:"source-tenant" help:"name of the Chronosphere tenant to query" default:"meta"`
 	LogQueries    bool   `help:"set to log queries"`
+	LogResponses  bool   `help:"set to log request/response bodies"`
 }
 
 // PromClient returns a prom PromClient.
@@ -41,12 +42,13 @@ func (opts *ClientOptions) PromClient(_ context.Context) (prom.Client, error) {
 		prom.WithHTTPOptions(httplib.SetHeader("API-Token", apiToken)),
 	}
 
-	if opts.LogQueries {
+	if opts.LogQueries || opts.LogResponses {
 		log, err := zap.NewProduction()
 		if err != nil {
 			return nil, fmt.Errorf("unable to create production logger: %w", err)
 		}
-		clientOpts = append(clientOpts, prom.WithQueryLog(log))
+
+		clientOpts = append(clientOpts, prom.WithQueryLog(log, opts.LogResponses))
 	}
 
 	return prom.NewClient(baseURL, clientOpts...)

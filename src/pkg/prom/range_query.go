@@ -51,8 +51,11 @@ func (q rangeQuery) Step(step model.Duration) RangeQuery {
 }
 
 func (q rangeQuery) Do(ctx context.Context) (*Result, error) {
-	qid := q.c.queryID.Add(1)
-	startTime := q.c.clock.Now()
+	log := q.c.queryLog.BeginQuery("range-query",
+		zap.String("query", q.q),
+		zap.Time("start", q.start),
+		zap.Time("end", q.end),
+		zap.Duration("step", time.Duration(q.step)))
 
 	if q.start.IsZero() {
 		return nil, fmt.Errorf("'start' must be set for range queries")
@@ -68,19 +71,10 @@ func (q rangeQuery) Do(ctx context.Context) (*Result, error) {
 	p.Add("end", strconv.FormatInt(q.end.Unix(), 10))
 	p.Add("step", q.step.String())
 
-	q.c.queryLog.Info("range-query",
-		zap.String("query", q.q),
-		zap.Uint64("id", qid),
-		zap.Time("start", q.start),
-		zap.Time("end", q.end),
-		zap.Duration("step", time.Duration(q.step)))
-
 	var r Result
 	if err := q.c.http.Post(ctx, pathRangeQuery,
 		httplib.FormURLEncoded(p), httplib.JSON(&r)); err != nil {
-		q.c.queryLog.Error("range-query",
-			zap.Uint64("id", qid),
-			zap.Error(err))
+		log.QueryFailed(err)
 
 		if httperr, ok := httplib.UnwrapError(err); ok {
 			return nil, NewError(httperr.StatusCode, httperr.Body.String())
@@ -89,11 +83,6 @@ func (q rangeQuery) Do(ctx context.Context) (*Result, error) {
 		return nil, err
 	}
 
-	endTime := q.c.clock.Now()
-	q.c.queryLog.Info("range-query",
-		zap.Uint64("id", qid),
-		zap.Strings("warnings", r.Warnings),
-		zap.Duration("elapsed", endTime.Sub(startTime)))
-
+	log.QueryComplete(r)
 	return &r, nil
 }

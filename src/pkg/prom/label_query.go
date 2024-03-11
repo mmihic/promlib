@@ -47,9 +47,6 @@ func (q labelQuery) End(t time.Time) LabelQuery {
 }
 
 func (q labelQuery) Do(ctx context.Context) ([]string, error) {
-	qid := q.c.queryID.Add(1)
-	startTime := q.c.clock.Now()
-
 	p := url.Values{}
 
 	if !q.start.IsZero() {
@@ -66,18 +63,15 @@ func (q labelQuery) Do(ctx context.Context) ([]string, error) {
 		}
 	}
 
-	q.c.queryLog.Info("labels-query",
+	log := q.c.queryLog.BeginQuery("labels-query",
 		zap.Strings("sels", q.sels),
-		zap.Uint64("id", qid),
 		zap.Time("start", q.start),
 		zap.Time("end", q.end))
 
 	var r labelsResult
 	if err := q.c.http.Post(ctx, pathLabelQuery,
 		httplib.FormURLEncoded(p), httplib.JSON(&r)); err != nil {
-		q.c.queryLog.Error("labels-query",
-			zap.Uint64("id", qid),
-			zap.Error(err))
+		log.QueryFailed(err)
 
 		if httperr, ok := httplib.UnwrapError(err); ok {
 			return nil, NewError(httperr.StatusCode, httperr.Body.String())
@@ -86,10 +80,7 @@ func (q labelQuery) Do(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	endTime := q.c.clock.Now()
-	q.c.queryLog.Info("range-query",
-		zap.Uint64("id", qid),
-		zap.Duration("elapsed", endTime.Sub(startTime)))
+	log.QueryComplete(&r)
 
 	return r.Data, nil
 }
