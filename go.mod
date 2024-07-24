@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/alecthomas/kong v0.8.1
 	github.com/jonboulle/clockwork v0.4.0
-	github.com/mmihic/golib v0.1.19
+	github.com/mmihic/golib v0.1.20
 	github.com/mmihic/httplib v0.1.0
 	github.com/prometheus/common v0.46.0
 	github.com/prometheus/prometheus v0.50.0

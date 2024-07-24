@@ -38,8 +38,8 @@ github.com/klauspost/compress v1.17.4 h1:Ej5ixsIri7BrIjBkRZLTo6ghwrEtHFk7ijlczPW
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
-github.com/mmihic/golib v0.1.19 h1:HclIXIh4xvIJdavH/zvMOOErz0fp6RpHZjyL/FEHIYk=
-github.com/mmihic/golib v0.1.19/go.mod h1:ZRg84YluyuWIONCsf/QaOX0WyqeP+wsQr0fr7M9e5lo=
+github.com/mmihic/golib v0.1.20 h1:f5vnzA9tjIoZQikCymqK4wNPQYvMkCNlH4bVDepYgSc=
+github.com/mmihic/golib v0.1.20/go.mod h1:ZRg84YluyuWIONCsf/QaOX0WyqeP+wsQr0fr7M9e5lo=
 github.com/mmihic/httplib v0.1.0 h1:ddtBFR05MXNRqzBuSzKlGRN9WX1l0LuV15Exj11jXnY=
 github.com/mmihic/httplib v0.1.0/go.mod h1:EyciGzDIJRFBegvE1hNnglu9Y9lYvv4CjPlcBjuFPiM=
 github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f h1:KUppIJq7/+SVif2QVs3tOP0zanoHgBEVAwHxUSIzRqU=

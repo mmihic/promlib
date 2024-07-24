@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mmihic/golib/src/pkg/set"
+	"github.com/mmihic/golib/src/pkg/container/set"
 	"github.com/mmihic/golib/src/pkg/timex"
 	"github.com/prometheus/common/model"
 
