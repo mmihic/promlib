@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-
 	"github.com/mmihic/httplib/src/pkg/httplib"
 	"go.uber.org/zap"
+	"os"
+	"strings"
 
 	"github.com/mmihic/promlib/src/pkg/prom"
 )
@@ -90,5 +90,7 @@ func (opts *ClientOptions) getAPIToken() (string, prom.Client, error) {
 	if len(apiToken) == 0 {
 		return "", nil, errors.New("neither --api-token-file nor PROM_API_TOKEN env var are set")
 	}
+
+	apiToken = strings.TrimSpace(apiToken)
 	return apiToken, nil, nil
 }
