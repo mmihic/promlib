@@ -19,11 +19,11 @@ const (
 
 // ClientOptions are options for creating a client on the command line.
 type ClientOptions struct {
-	APITokenFile  string `help:"file containing the API token"`
-	PromServerURL string `name:"prom-server-url" help:"Prometheus server URL"`
-	SourceTenant  string `name:"source-tenant" help:"name of the Chronosphere tenant to query" default:"meta"`
-	LogQueries    bool   `help:"set to log queries"`
-	LogResponses  bool   `help:"set to log request/response bodies"`
+	PromAPITokenFile string `name:"prom-api-token-file" help:"file containing the API token"`
+	PromServerURL    string `name:"prom-server-url" help:"Prometheus server URL"`
+	SourceTenant     string `name:"source-tenant" help:"name of the Chronosphere tenant to query" default:"meta"`
+	LogQueries       bool   `help:"set to log queries"`
+	LogResponses     bool   `help:"set to log request/response bodies"`
 }
 
 // PromClient returns a prom PromClient.
@@ -74,8 +74,8 @@ func (opts *ClientOptions) getBaseURL() (string, error) {
 func (opts *ClientOptions) getAPIToken() (string, prom.Client, error) {
 	var apiToken string
 
-	if len(opts.APITokenFile) != 0 {
-		apiTokenBytes, err := os.ReadFile(opts.APITokenFile)
+	if len(opts.PromAPITokenFile) != 0 {
+		apiTokenBytes, err := os.ReadFile(opts.PromAPITokenFile)
 		if err != nil {
 			return "", nil, err
 		}
