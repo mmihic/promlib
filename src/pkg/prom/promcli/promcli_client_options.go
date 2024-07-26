@@ -5,12 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mmihic/golib/src/pkg/cli"
 	"github.com/mmihic/httplib/src/pkg/httplib"
-	"go.uber.org/zap"
-	"os"
-	"strings"
-
 	"github.com/mmihic/promlib/src/pkg/prom"
+	"go.uber.org/zap"
 )
 
 const (
@@ -28,9 +26,9 @@ type ClientOptions struct {
 
 // PromClient returns a prom PromClient.
 func (opts *ClientOptions) PromClient(_ context.Context) (prom.Client, error) {
-	apiToken, client, err := opts.getAPIToken()
+	apiToken, err := cli.ReadAPIToken(opts.PromAPITokenFile, "PROM_API_TOKEN")
 	if err != nil {
-		return client, err
+		return nil, err
 	}
 
 	baseURL, err := opts.getBaseURL()
@@ -69,28 +67,4 @@ func (opts *ClientOptions) getBaseURL() (string, error) {
 		return "", errors.New("one of --tenant or --server-url must be specified")
 	}
 	return baseURL, nil
-}
-
-func (opts *ClientOptions) getAPIToken() (string, prom.Client, error) {
-	var apiToken string
-
-	if len(opts.PromAPITokenFile) != 0 {
-		apiTokenBytes, err := os.ReadFile(opts.PromAPITokenFile)
-		if err != nil {
-			return "", nil, err
-		}
-
-		apiToken = string(apiTokenBytes)
-	}
-
-	if len(apiToken) == 0 {
-		apiToken = os.Getenv("PROM_API_TOKEN")
-	}
-
-	if len(apiToken) == 0 {
-		return "", nil, errors.New("neither --api-token-file nor PROM_API_TOKEN env var are set")
-	}
-
-	apiToken = strings.TrimSpace(apiToken)
-	return apiToken, nil, nil
 }
